@@ -160,18 +160,15 @@ public class FuncionariosController {
     }
 
     public void biggerAge(){
-        Optional<Funcionario> moreOlderFuncionarioOptional = funcionarios.stream().min(Comparator.comparing(Funcionario::getDataNascimento));
+        funcionarios
+                .stream()
+                .min(Comparator.comparing(Funcionario::getDataNascimento))
+                .ifPresentOrElse(funcionario -> {
+                    int moreOlderFuncionarioAge = Period.between(funcionario.getDataNascimento(), LocalDate.now()).getYears();
+                    String message = "Funcionário: " + funcionario.getNome() + "\nIdade: " + moreOlderFuncionarioAge;
 
-        if(moreOlderFuncionarioOptional.isPresent()) {
-            Funcionario moreOlderFuncionario = moreOlderFuncionarioOptional.get();
-            int moreOlderFuncionarioAge = Period.between(moreOlderFuncionario.getDataNascimento(), LocalDate.now()).getYears();
-            String message = "Funcionário: " + moreOlderFuncionario.getNome() + "\nIdade: " + moreOlderFuncionarioAge;
-
-            funcionariosView.showPlainMessage(message, "Funcionário mais velho");
-            return;
-        }
-
-        funcionariosView.showErrorMessage("Nenhum funcionário encontrado!");
+                    funcionariosView.showPlainMessage(message, "Funcionário mais velho");
+                }, () -> funcionariosView.showErrorMessage("Nenhum funcionário encontrado!"));
     }
 
     public void orderByNome() {

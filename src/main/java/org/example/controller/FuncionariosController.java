@@ -100,8 +100,7 @@ public class FuncionariosController {
         Object[][] rows = funcionarios
                 .stream()
                 .map(funcionario -> new Object[]{funcionario.getNome(), funcionario.getFormattedDataNascimento(), funcionario.getFormattedSalario(), funcionario.getFuncao()})
-                .toList()
-                .toArray(new Object[0][]);
+                .toArray(Object[][]::new);
 
         String[] cols = {"Nome", "Data de nascimento", "Salário", "Função"};
 
@@ -187,8 +186,7 @@ public class FuncionariosController {
         Object[][] rows = funcionarios
                 .stream()
                 .map(funcionario -> new Object[]{funcionario.getNome(), funcionario.getSalario().divide(new BigDecimal("1212"), RoundingMode.HALF_UP)})
-                .toList()
-                .toArray(new Object[0][]);
+                .toArray(Object[][]::new);
 
         String[] cols = {"Nome", "Quantidade de salarios mínimos"};
 

@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dao.FuncionarioDAO;
 import org.example.model.Funcionario;
 import org.example.view.FuncionariosView;
 
@@ -11,16 +12,16 @@ import java.time.Period;
 import java.util.*;
 
 public class FuncionariosController {
-    private final List<Funcionario> funcionarios;
     private final FuncionariosView funcionariosView;
+    private final FuncionarioDAO funcionarioDAO;
     private Map<String, List<Funcionario>> funcionariosMap;
 
     public FuncionariosController() {
-        funcionarios = new ArrayList<>();
         funcionariosView = new FuncionariosView();
+        funcionarioDAO = new FuncionarioDAO();
     }
 
-    public void listOptions () {
+    public void listOptions() {
         while(true) {
             int option = funcionariosView.options();
 
@@ -34,7 +35,7 @@ public class FuncionariosController {
                     removeJoao();
                     break;
                 case 2:
-                    showFuncionarios(funcionarios);
+                    showFuncionarios(funcionarioDAO.getAll());
                     break;
                 case 3:
                     increaseTenPercent();
@@ -68,28 +69,25 @@ public class FuncionariosController {
 
     public void insertAll() {
         try{
-            Collections.addAll(
-                    funcionarios,
-                    new Funcionario("Maria", LocalDate.of(2000,10,18), new BigDecimal("2009.44"), "Operador"),
-                    new Funcionario("João", LocalDate.of(1990,5,12), new BigDecimal("2284.38"), "Operador"),
-                    new Funcionario("Caio", LocalDate.of(1961,5,2), new BigDecimal("9836.14"), "Coordenador"),
-                    new Funcionario("Miguel", LocalDate.of(1988,10,14), new BigDecimal("19119.88"), "Diretor"),
-                    new Funcionario("Alice", LocalDate.of(1995,1,5), new BigDecimal("2234.68"), "Recepcionista"),
-                    new Funcionario("Heitor", LocalDate.of(1999,11,19), new BigDecimal("1582.72"), "Operador"),
-                    new Funcionario("Arthur", LocalDate.of(1993,3,31), new BigDecimal("4071.84"), "Contador"),
-                    new Funcionario("Laura", LocalDate.of(1994,7,8), new BigDecimal("3017.45"), "Gerente"),
-                    new Funcionario("Heloísa", LocalDate.of(2003,5,24), new BigDecimal("1606.85"), "Eletricista"),
-                    new Funcionario("Helena", LocalDate.of(1996,9,2), new BigDecimal("2799.93"), "Gerente")
-            );
+            funcionarioDAO.create(new Funcionario("Maria", LocalDate.of(2000,10,18), new BigDecimal("2009.44"), "Operador"));
+            funcionarioDAO.create(new Funcionario("João", LocalDate.of(1990,5,12), new BigDecimal("2284.38"), "Operador"));
+            funcionarioDAO.create(new Funcionario("Caio", LocalDate.of(1961,5,2), new BigDecimal("9836.14"), "Coordenador"));
+            funcionarioDAO.create(new Funcionario("Miguel", LocalDate.of(1988,10,14), new BigDecimal("19119.88"), "Diretor"));
+            funcionarioDAO.create(new Funcionario("Alice", LocalDate.of(1995,1,5), new BigDecimal("2234.68"), "Recepcionista"));
+            funcionarioDAO.create(new Funcionario("Heitor", LocalDate.of(1999,11,19), new BigDecimal("1582.72"), "Operador"));
+            funcionarioDAO.create(new Funcionario("Arthur", LocalDate.of(1993,3,31), new BigDecimal("4071.84"), "Contador"));
+            funcionarioDAO.create(new Funcionario("Laura", LocalDate.of(1994,7,8), new BigDecimal("3017.45"), "Gerente"));
+            funcionarioDAO.create(new Funcionario("Heloísa", LocalDate.of(2003,5,24), new BigDecimal("1606.85"), "Eletricista"));
+            funcionarioDAO.create(new Funcionario("Helena", LocalDate.of(1996,9,2), new BigDecimal("2799.93"), "Gerente"));
             funcionariosView.showSucessfullMessage();
-        } catch (Exception _) {
+        } catch (RuntimeException _) {
             funcionariosView.showErrorMessage("Algo deu errado. Tente novamente!");
         }
     }
 
     public void removeJoao(){
-        try{
-            funcionarios.removeIf(funcionario -> funcionario.getNome().equals("João"));
+        try {
+            funcionarioDAO.deleteByName("João");
             funcionariosView.showSucessfullMessage();
         } catch (Exception _) {
             funcionariosView.showErrorMessage("Algo deu errado. Tente novamente!");
@@ -109,11 +107,7 @@ public class FuncionariosController {
 
     public void increaseTenPercent(){
         try {
-            funcionarios.forEach(funcionario -> {
-                BigDecimal tenPercent = funcionario.getSalario().multiply(new BigDecimal("0.10"));
-                BigDecimal newSalario = funcionario.getSalario().add(tenPercent);
-                funcionario.setSalario(newSalario);
-            });
+            funcionarioDAO.increaseTenPercent();
             funcionariosView.showSucessfullMessage();
         } catch (Exception _) {
             funcionariosView.showErrorMessage("Algo deu errado. Tente novamente!");
@@ -123,17 +117,19 @@ public class FuncionariosController {
     public void groupByFuncao(){
         try {
             funcionariosMap = new HashMap<>();
-            funcionarios.forEach(funcionario -> {
-                String key = funcionario.getFuncao();
+            funcionarioDAO
+                    .getAll()
+                    .forEach(funcionario -> {
+                        String key = funcionario.getFuncao();
 
-                if (funcionariosMap.containsKey(key)) {
-                    funcionariosMap.get(key).add(funcionario);
-                    return;
-                }
+                        if (funcionariosMap.containsKey(key)) {
+                            funcionariosMap.get(key).add(funcionario);
+                            return;
+                        }
 
-                funcionariosMap.put(key, new ArrayList<>());
-                funcionariosMap.get(key).add(funcionario);
-            });
+                        funcionariosMap.put(key, new ArrayList<>());
+                        funcionariosMap.get(key).add(funcionario);
+                    });
             funcionariosView.showSucessfullMessage();
         } catch (Exception _) {
             funcionariosView.showErrorMessage("Algo deu errado. Tente novamente!");
@@ -145,45 +141,50 @@ public class FuncionariosController {
             funcionariosView.showErrorMessage("Os funcionários não foram agrupados ou não existem. Tente novamente após realizar estas operações!");
             return;
         }
-        List<String> formattedFuncionarios = funcionariosMap.entrySet().stream().map(funcionario -> funcionario.getKey() + " = " + funcionario.getValue()).toList();
+
+        List<String> formattedFuncionarios = funcionariosMap
+                .entrySet()
+                .stream()
+                .map(funcionario -> funcionario.getKey() + " = " + funcionario.getValue())
+                .toList();
+
         funcionariosView.showPlainMessage(String.join("\n", formattedFuncionarios), null);
     }
 
     public void funcionariosFromMonth10or12(){
-        List<Funcionario> filteredFuncionarios = funcionarios
-                .stream()
-                .filter(funcionario -> funcionario.getDataNascimento().getMonthValue() == 10 || funcionario.getDataNascimento().getMonthValue() == 12)
-                .toList();
-
-        showFuncionarios(filteredFuncionarios);
+        showFuncionarios(funcionarioDAO.getWithMonth10or12());
     }
 
     public void biggerAge(){
-        funcionarios
-                .stream()
-                .min(Comparator.comparing(Funcionario::getDataNascimento))
-                .ifPresentOrElse(funcionario -> {
-                    int moreOlderFuncionarioAge = Period.between(funcionario.getDataNascimento(), LocalDate.now()).getYears();
-                    String message = "Funcionário: " + funcionario.getNome() + "\nIdade: " + moreOlderFuncionarioAge;
-
-                    funcionariosView.showPlainMessage(message, "Funcionário mais velho");
-                }, () -> funcionariosView.showErrorMessage("Nenhum funcionário encontrado!"));
+        try {
+            Funcionario funcionario = funcionarioDAO.getMoreOlder();
+            int funcionarioAge = Period.between(funcionario.getDataNascimento(), LocalDate.now()).getYears();
+            String message = "Funcionário: " + funcionario.getNome() + "\nIdade: " + funcionarioAge;
+            funcionariosView.showPlainMessage(message, "Funcionário mais velho");
+        } catch (NullPointerException e) {
+            funcionariosView.showErrorMessage("Nenhum funcionário encontrado!");
+        } catch (Exception _) {
+            funcionariosView.showErrorMessage("Algo deu errado. Tente novamente!");
+        }
     }
 
     public void orderByNome() {
-        List<Funcionario> orderedFuncionarios = new ArrayList<>(List.copyOf(funcionarios));
-        orderedFuncionarios.sort(Comparator.comparing(Funcionario::getNome));
-        showFuncionarios(orderedFuncionarios);
+        showFuncionarios(funcionarioDAO.getAllOrderedByName());
     }
 
     public void sumSalario() {
-        BigDecimal total = funcionarios.stream().reduce(new BigDecimal("0"), (acc, elem) -> acc.add(elem.getSalario()), BigDecimal::add);
-        DecimalFormat df = new DecimalFormat("#,###.00");
-        funcionariosView.showPlainMessage("R$" + df.format(total), "Salário total");
+        try {
+            BigDecimal total = funcionarioDAO.sumAllSalaries();
+            DecimalFormat df = new DecimalFormat("#,###.00");
+            funcionariosView.showPlainMessage("R$" + df.format(total), "Salário total");
+        } catch (IllegalArgumentException e) {
+            funcionariosView.showErrorMessage("Nenhum funcionário encontrado!");
+        }
     }
 
     public void salarioMinimoQuantity(){
-        Object[][] rows = funcionarios
+        Object[][] rows = funcionarioDAO
+                .getAll()
                 .stream()
                 .map(funcionario -> new Object[]{funcionario.getNome(), funcionario.getSalario().divide(new BigDecimal("1212"), RoundingMode.HALF_UP)})
                 .toArray(Object[][]::new);
